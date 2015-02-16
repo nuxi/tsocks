@@ -69,6 +69,7 @@ static char *conffile = NULL;
 
 /* Exported Function Prototypes */
 void _init(void);
+void tsocks_init(void);
 int connect(CONNECT_SIGNATURE);
 int select(SELECT_SIGNATURE);
 int poll(POLL_SIGNATURE);
@@ -101,9 +102,18 @@ static int read_socksv5_connect(struct connreq *conn);
 static int read_socksv5_auth(struct connreq *conn);
 
 void _init(void) {
+	tsocks_init();
+}
+
+void tsocks_init(void) {
+	static int global_init = 0;
 #ifdef USE_OLD_DLSYM
 	void *lib;
 #endif
+	if(global_init) {
+		return;
+	}
+	global_init = 1;
 
 	/* We could do all our initialization here, but to be honest */
 	/* most programs that are run won't use our services, so     */
@@ -197,6 +207,8 @@ int connect(CONNECT_SIGNATURE) {
 	unsigned int res = -1;
 	struct serverent *path;
    struct connreq *newconn;
+
+   tsocks_init();
 
    get_environment();
 
@@ -345,6 +357,8 @@ int select(SELECT_SIGNATURE) {
    int monitoring = 0;
    struct connreq *conn, *nextconn;
    fd_set mywritefds, myreadfds, myexceptfds;
+
+   tsocks_init();
 
    /* If we're not currently managing any requests we can just 
     * leave here */
@@ -528,6 +542,8 @@ int poll(POLL_SIGNATURE) {
    int monitoring = 0;
    struct connreq *conn, *nextconn;
 
+   tsocks_init();
+
    /* If we're not currently managing any requests we can just 
     * leave here */
    if (!requests)
@@ -681,6 +697,8 @@ int poll(POLL_SIGNATURE) {
 int close(CLOSE_SIGNATURE) {
    int rc;
    struct connreq *conn;
+
+   tsocks_init();
 
 	if (realclose == NULL) {
 		show_msg(MSGERR, "Unresolved symbol: close\n");
@@ -1161,6 +1179,8 @@ static int read_socksv4_req(struct connreq *conn) {
 #ifdef USE_SOCKS_DNS
 int res_init(void) {
         int rc;
+
+    tsocks_init();
 
 	if (realresinit == NULL) {
 		show_msg(MSGERR, "Unresolved symbol: res_init\n");
