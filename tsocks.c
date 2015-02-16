@@ -781,8 +781,15 @@ static struct connreq *find_socks_request(int sockid, int includefinished) {
 static int handle_request(struct connreq *conn) {
    int rc = 0;
    int i = 0;
+   int flags = 0;
 
    show_msg(MSGDEBUG, "Beginning handle loop for socket %d\n", conn->sockid);
+
+   /* disable O_NONBLOCK */
+   flags = fcntl(conn->sockid, F_GETFL);
+   if(flags & O_NONBLOCK) {
+      fcntl(conn->sockid, F_SETFL, flags & ~O_NONBLOCK);
+   }
 
    while ((rc == 0) && 
           (conn->state != FAILED) &&
@@ -853,6 +860,12 @@ static int handle_request(struct connreq *conn) {
    if (i == 20)
       show_msg(MSGERR, "Ooops, state loop while handling request %d\n", 
                conn->sockid);
+
+   /* restore O_NONBLOCK */
+   if(flags & O_NONBLOCK) {
+      flags = fcntl(conn->sockid, F_GETFL);
+      fcntl(conn->sockid, F_SETFL, flags | O_NONBLOCK);
+   }
 
    show_msg(MSGDEBUG, "Handle loop completed for socket %d in state %d, "
                       "returning %d\n", conn->sockid, conn->state, rc);
