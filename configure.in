@@ -171,8 +171,8 @@ if test "x${enable_debug}" = "x"; then
   AC_DEFINE(ALLOW_MSG_OUTPUT)
 fi
 
-if test "x${enable_hostnames}" = "x"; then
-  AC_DEFINE(HOSTNAMES)
+if test "${enable_hostnames}" = "yes"; then
+  AC_DEFINE(HOSTNAMES,1)
 fi
 
 if test "${enable_socksdns}" = "yes" -a \
