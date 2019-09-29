@@ -36,6 +36,32 @@ static int handle_defuser(struct parsedfile *, int, char *);
 static int handle_defpass(struct parsedfile *, int, char *);
 static int make_netent(char *value, struct netent **ent);
 
+char __attribute__ ((visibility ("hidden")))
+*find_config(char *line) {
+	struct passwd* pw;
+
+	errno = 0;
+
+	pw = getpwuid(getuid());
+	if (errno) {
+		perror("getpwuid");
+		return NULL;
+	}
+
+	/* check for config in $HOME */
+	snprintf(line, MAXLINE - 1, "%s/.tsocks.conf", pw->pw_dir);
+
+	if (access(line, R_OK)) {
+		show_msg(MSGDEBUG, "Can't access %s, using " CONF_FILE " instead.\n", line);
+		strncpy(line, CONF_FILE, MAXLINE - 1);
+	}
+
+	/* Insure null termination */
+	line[MAXLINE - 1] = (char) 0;
+
+	return line;
+}
+
 int __attribute__ ((visibility ("hidden")))
 read_config (char *filename, struct parsedfile *config) {
 	FILE *conf;
